@@ -1,0 +1,31 @@
+name: Build APK
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Распаковать проект
+        run: unzip -q CinemaTV-Android-project.zip -d work
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: TorrServer
+        run: |
+          cd work/CinemaTV
+          mkdir -p app/src/main/jniLibs/arm64-v8a app/src/main/jniLibs/armeabi-v7a
+          curl -fL https://github.com/YouROK/TorrServer/releases/latest/download/TorrServer-android-arm64 -o app/src/main/jniLibs/arm64-v8a/libtorrserver.so
+          curl -fL https://github.com/YouROK/TorrServer/releases/latest/download/TorrServer-android-arm7 -o app/src/main/jniLibs/armeabi-v7a/libtorrserver.so
+      - name: Сборка
+        run: |
+          cd work/CinemaTV
+          gradle assembleRelease --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CinemaTV-apk
+          path: work/CinemaTV/app/build/outputs/apk/release/*.apk
